@@ -1,0 +1,173 @@
+﻿@page "/shelters"
+@using fantasticfive1.Models
+@using fantasticfive1.Data
+@inject fantasticfive1.Data.LookupService lookupservice;
+@rendermode InteractiveServer
+@using System;
+
+<br/>
+<PageTitle>Support Squad: Shelters</PageTitle>
+<h2 class="display-1">Shelters</h2>
+<div class="d-flex flex-row justify-content-between" style="margin-left: 20px;">
+    <div class="form-check form-switch">
+        <input class="form-check-input" style="font-size: 1.5rem;margin-right: 10px;" type="checkbox" role="switch" id="WomenChildren" @bind-value="WomenChildrenBool" @bind-value:event="onchange">
+        <label class="form-check-label" style="font-size: 1.5rem;margin-right: 10px;" for="WomenChildren">Women and Child Friendly</label>
+    </div>
+
+    <div class="form-check form-switch">
+        <input class="form-check-input" style="font-size: 1.5rem;margin-right: 10px;" type="checkbox" role="switch" id="PetFriendly" @bind-value="PetFriendlyBool" @bind-value:event="onchange">
+        <label class="form-check-label" style="font-size: 1.5rem;margin-right: 10px;" for="PetFriendly">Pet Friendly</label>
+    </div>
+    <br />
+    <div class="d-flex align-items-center">
+        <label for="MaxDistance" style="font-size: 1.5rem; margin-right: 10px;">Max Distance:</label>
+        <select class="form-select" @bind="MaxDistance" style="width: auto; font-size: 1.5rem;">
+            <option value="5">5 Miles</option>
+            <option value="10">10 Miles</option>
+            <option value="25">25 Miles</option>
+        </select>
+    </div>
+</div>
+
+<div class="text-center my-3">
+    <button class="btn color-2 w-100 text-light" style="font-size: 2rem;" @onclick="RefreshShelters" disabled="@isRefreshing">
+        <i class="fas fa-sync-alt @(isRefreshing ? "fa-spin" : "")" style="font-size: 2rem;"></i> Search Shelters
+    </button>
+</div>
+
+<div class="container">
+
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Address</th>
+                <th>Hours</th>
+                <th>Phone</th>
+                <th>Distance</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var shelter in shelters)
+            {
+
+
+                                                                            <tr>
+                                                                                <td>@shelter.Name</td>
+                                                                                <td>@shelter.Address</td>
+                                                                                <td>@shelter.Hours</td>
+                                                                                <td>@shelter.PhoneNumber</td>
+                                                                                <td>@shelter.Distance.ToString("F1") Miles</td>
+                                                                            </tr>
+            }
+
+        </tbody>
+    </table>
+</div>
+
+@code {
+    private List<Shelter> shelters = new List<Shelter>();
+
+    private int WomenChildren { get; set; } = 0;
+    private int PetFriendly { get; set; } = 0;
+    private bool isRefreshing = false;
+    private string MaxDistance = "25";
+
+    private double lat1 = 26.2015614;
+    private double lon1 = -80.294;
+
+    const double R = 3958.8;
+
+    protected override async Task OnInitializedAsync()
+    {
+        shelters = await lookupservice.ShelterLookup();
+        shelters.RemoveAll(shelter =>
+            {
+                double maxDistance = double.Parse(MaxDistance);
+                double lat2 = double.Parse(shelter.Lat);
+                double lon2 = double.Parse(shelter.Lon);
+
+                // Convert degrees to radians
+                double lat1Rad = DegreesToRadians(lat1);
+                double lon1Rad = DegreesToRadians(lon1);
+                double lat2Rad = DegreesToRadians(lat2);
+                double lon2Rad = DegreesToRadians(lon2);
+
+                // Haversine formula
+                double dLat = lat2Rad - lat1Rad;
+                double dLon = lon2Rad - lon1Rad;
+
+                double a = Math.Sin(dLat / 2) * Math.Sin(dLat / 2) +
+                       Math.Cos(lat1Rad) * Math.Cos(lat2Rad) * Math.Sin(dLon / 2) * Math.Sin(dLon / 2);
+                double c = 2 * Math.Atan2(Math.Sqrt(a), Math.Sqrt(1 - a));
+
+                double distance = R * c;
+
+                // Assign the calculated distance to the shelter's Distance property
+                shelter.Distance = distance;
+
+                // Remove shelter if its distance is greater than MaxDistance
+                return distance > maxDistance;
+            });
+
+
+
+    }
+
+    public static double DegreesToRadians(double degrees)
+    {
+        return degrees * Math.PI / 180;
+    }
+
+    private bool WomenChildrenBool
+    {
+        get => WomenChildren == 1;
+        set => WomenChildren = value ? 1 : 0;
+    }
+
+    private bool PetFriendlyBool
+    {
+        get => PetFriendly == 1;
+        set => PetFriendly = value ? 1 : 0;
+    }
+    private async Task RefreshShelters()
+    {
+        isRefreshing = true;
+
+        // Call the service method with the current filter values
+        shelters = await lookupservice.ShelterLookupWQs(WomenChildren, PetFriendly);
+
+        shelters.RemoveAll(shelter =>
+            {
+                double maxDistance = double.Parse(MaxDistance);
+                double lat2 = double.Parse(shelter.Lat);
+                double lon2 = double.Parse(shelter.Lon);
+
+                // Convert degrees to radians
+                double lat1Rad = DegreesToRadians(lat1);
+                double lon1Rad = DegreesToRadians(lon1);
+                double lat2Rad = DegreesToRadians(lat2);
+                double lon2Rad = DegreesToRadians(lon2);
+
+                // Haversine formula
+                double dLat = lat2Rad - lat1Rad;
+                double dLon = lon2Rad - lon1Rad;
+
+                double a = Math.Sin(dLat / 2) * Math.Sin(dLat / 2) +
+                       Math.Cos(lat1Rad) * Math.Cos(lat2Rad) * Math.Sin(dLon / 2) * Math.Sin(dLon / 2);
+                double c = 2 * Math.Atan2(Math.Sqrt(a), Math.Sqrt(1 - a));
+
+                double distance = R * c;
+
+                // Assign the calculated distance to the shelter's Distance property
+                shelter.Distance = distance;
+
+                // Remove shelter if its distance is greater than MaxDistance
+                return distance > maxDistance;
+            });
+
+        isRefreshing = false;
+    }
+
+
+}

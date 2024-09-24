@@ -1,0 +1,63 @@
+﻿@page "/harmreduction"
+
+<PageTitle>Support Squad: Harm Reduction</PageTitle>
+<div class="container">
+    <h2 class="display-1">Harm Reduction</h2>
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Location</th>
+                <th>Phone Number</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var location in locations)
+            {
+                <tr>
+                    <td>@location.Name</td>
+                    <td>@location.PhoneNumber</td>
+                    <td>
+                        <a href="/donations/food/getnow/@location.Name" class="btn color-3 w-100">Go Now</a>
+
+                    </td>
+                </tr>
+            }
+
+        </tbody>
+    </table>
+</div>
+
+@code {
+
+    private Location[] locations = new Location[3];
+
+    protected override void OnInitialized()
+    {
+        Random rand = new Random();
+        locations[0] = new Location { Name = "The Spot Broward", RemainingCount = rand.Next(10), PhoneNumber = "754-123-4567" };
+        locations[1] = new Location
+            {
+                Name = "Florida Harm Reduction Collective",
+                RemainingCount = rand.Next(10),
+                PhoneNumber = "754 - 234 - 5678"
+            };
+        locations[2] = new Location
+            {
+                Name = "Broward Addiction Recovery Center",
+                RemainingCount = 0,
+                PhoneNumber =
+            "754-345-6789"
+            };
+    }
+
+    public class Location
+    {
+        public string? Name { get; set; }
+        public int? RemainingCount { get; set; }
+
+        public string? PhoneNumber { get; set; }
+
+
+    }
+}
